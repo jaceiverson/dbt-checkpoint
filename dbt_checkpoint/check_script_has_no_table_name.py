@@ -189,9 +189,10 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         if status_code_file:
             result = "\n- ".join(list(tables))  # pragma: no mutate
             print(
-                f"{red(filename)}: does not use source() or ref() macros for tables:\n",
+                f"{red(filename)}: does not use source() or ref() macros for tables. WHY?:\n",
                 f"- {yellow(result)}",
             )
+            print("JACE IS HERE")
             status_code = status_code_file
 
     end_time = time.time()
