@@ -1,10 +1,13 @@
 import pytest
 
-from dbt_checkpoint.check_script_has_no_table_name import has_table_name
-from dbt_checkpoint.check_script_has_no_table_name import main
-from dbt_checkpoint.check_script_has_no_table_name import prev_cur_next_iter
-from dbt_checkpoint.check_script_has_no_table_name import replace_comments
-from dbt_checkpoint.check_script_has_no_table_name import replace_string_literals
+from dbt_checkpoint.check_script_has_no_table_name import (
+    has_table_name,
+    main,
+    prev_cur_next_iter,
+    remove_config_description,
+    replace_comments,
+    replace_string_literals,
+)
 
 # Input, args, expected return value, expected output
 TESTS = (  # type: ignore
@@ -573,6 +576,33 @@ def test_replace_string_literals():
     # Empty string
     sql = "''"
     assert replace_string_literals(sql) == "''"
+
+
+def test_replace_config_description():
+    # with trailing comma
+    sql = "{{config(materialized='incremental', unique_key='primary_key', incremental_strategy='merge',description='from this is explanation you know how the model joins tables together',)}}"
+    expected_output = "{{config(materialized='incremental', unique_key='primary_key', incremental_strategy='merge',)}}"
+    assert remove_config_description(sql) == expected_output
+
+    # without trailing comma
+    sql = "{{config(materialized='incremental', unique_key='primary_key', incremental_strategy='merge',description='from this is explanation you know how the model joins tables together')}}"
+    expected_output = "{{config(materialized='incremental', unique_key='primary_key', incremental_strategy='merge',)}}"
+    assert remove_config_description(sql) == expected_output
+
+    # empty description
+    sql = "{{config(materialized='incremental', unique_key='primary_key', incremental_strategy='merge',description='')}}"
+    expected_output = "{{config(materialized='incremental', unique_key='primary_key', incremental_strategy='merge',)}}"
+    assert remove_config_description(sql) == expected_output
+
+    # no description ref
+    sql = "SELECT * FROM {{ ref('model') }}"
+    expected_output = "SELECT * FROM {{ ref('model') }}"
+    assert remove_config_description(sql) == expected_output
+
+    # no description source
+    sql = "SELECT * FROM {{ source('schema','model') }}"
+    expected_output = "SELECT * FROM {{ source('schema','model') }}"
+    assert remove_config_description(sql) == expected_output
 
 
 def test_context_aware_parsing():

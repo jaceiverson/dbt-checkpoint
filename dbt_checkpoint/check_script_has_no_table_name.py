@@ -3,7 +3,7 @@ import os
 import re
 import time
 from pathlib import Path
-from typing import Generator, Optional, Sequence, Set, Tuple, List
+from typing import Generator, List, Optional, Sequence, Set, Tuple
 
 from dbt_checkpoint.tracking import dbtCheckpointTracking
 from dbt_checkpoint.utils import (
@@ -61,6 +61,14 @@ def add_space_to_source_ref(sql: str) -> str:
 def replace_string_literals(sql: str) -> str:
     """Replace string literals with placeholders to avoid false positives."""
     return re.sub(REGEX_STRING_LITERALS, "''", sql)
+
+
+def remove_config_description(sql: str) -> str:
+    """
+    Remove the description found in the model config as it
+    should not be considered in the check for hard coded table names
+    """
+    return re.sub(r"description\s*=\s*'(.*?)'\s*,?", "", sql)
 
 
 def has_table_name(
@@ -181,8 +189,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         if status_code_file:
             result = "\n- ".join(list(tables))  # pragma: no mutate
             print(
-                f"{red(filename)}: "
-                f"does not use source() or ref() macros for tables:\n",
+                f"{red(filename)}: does not use source() or ref() macros for tables:\n",
                 f"- {yellow(result)}",
             )
             status_code = status_code_file
